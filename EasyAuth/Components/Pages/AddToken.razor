@@ -1,0 +1,81 @@
+﻿@page "/add-token"
+@rendermode InteractiveServer
+
+@using EasyAuth.Models.ViewModels;
+@using EasyAuth.Data;
+@using Models.Entities;
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ApplicationDbContext appDbContext;
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+@inject NavigationManager navigationManager;
+
+
+<div>
+    <EditForm Model="@Model" class="form" OnValidSubmit="AddTokenSubmit" FormName="AddTokenForm">
+        <DataAnnotationsValidator />
+        <h3 class="m-1">Add Token</h3>
+        <InputText @bind-Value="Model.Token" class="form-control m-1"placeholder="Token"></InputText>
+        <ValidationMessage For="() => Model.Token" />
+        <InputText @bind-Value="Model.Role" class="form-control m-1" placeholder="Role"></InputText>
+        <ValidationMessage For="() => Model.Role" />
+        <InputDate @bind-Value="Model.Expires" class="form-control m-1"></InputDate>
+        <span>@errorMessage</span>
+        <button type="submit" class="btn btn-success m-1">Add Token</button>
+
+    </EditForm>
+</div>
+
+@code {
+    [CascadingParameter]
+    public HttpContext HttpContext { get; set; }
+
+    [SupplyParameterFromForm]
+    public TokenViewModel Model { get; set; } = new();
+
+    private string? errorMessage;
+
+    private async Task AddTokenSubmit() {
+        try
+        {
+            if (Model.Expires < DateTime.UtcNow)
+            {
+                errorMessage = "Expiration date must be in the future";
+                return;
+            }
+            var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authenticationState.User;
+
+            if (user is null)
+            {
+                errorMessage = "Failed to get Owner username";
+            }
+
+            var tokenEntity = new TokenModel
+                {
+                    OwnerUsername = user.Identity.Name,
+                    Token = Model.Token,
+                    Role = Model.Role,
+                    Expires = Model.Expires,
+                    CreatedAt = DateTime.UtcNow,
+                    IsFreezed = false
+                };
+
+            appDbContext.Tokens.Add(tokenEntity);
+            await appDbContext.SaveChangesAsync();
+
+            Model = new TokenViewModel();
+            navigationManager.NavigateTo("/tokens");
+            NavigateToTokens();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error adding token: {ex.Message}";
+            Console.WriteLine($"Error adding token: {ex}");
+        }
+    }
+    private void NavigateToTokens(){
+        navigationManager.NavigateTo("/tokens");
+    }
+
+}

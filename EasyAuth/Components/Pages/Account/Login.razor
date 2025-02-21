@@ -1,0 +1,52 @@
+﻿@page "/login"
+
+@using EasyAuth.Models.ViewModels;
+@using EasyAuth.Data;
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication;
+@using Microsoft.AspNetCore.Authentication.Cookies;
+@inject ApplicationDbContext appDbContext;
+@inject NavigationManager navigationManager;
+
+<div>
+	<EditForm Model="@Model" OnValidSubmit="Authenticate" FormName="LoginForm">
+		<DataAnnotationsValidator />
+		<h3>Login</h3>
+		<InputText @bind-Value="Model.UserName" placeholder="Username"></InputText>
+		<ValidationMessage For="() => Model.UserName" />
+		<InputText @bind-Value="Model.Password" placeholder="Password"></InputText>
+		<ValidationMessage For="() => Model.Password" />
+		<span>@errorMessage</span>
+		<button type="submit">Login</button>
+
+	</EditForm>
+</div>
+
+@code {
+	[CascadingParameter]
+	public HttpContext? HttpContext { get; set; }
+
+	[SupplyParameterFromForm]
+	public LoginViewModel Model { get; set; } = new();
+
+	private string? errorMessage;
+
+	private async Task Authenticate(){
+		var userAccount = appDbContext.UserAccounts.Where(x => x.UserName == Model.UserName).FirstOrDefault();
+		if(userAccount is null || userAccount.Password != Model.Password){
+			errorMessage = "Invalid User Name or Password";
+			return;
+		}
+
+		var claims = new List<Claim>
+		{
+			new Claim(ClaimTypes.Name, Model.UserName),
+			new Claim(ClaimTypes.Role, userAccount.Role)
+		};
+
+		var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+		var principal = new ClaimsPrincipal(identity);
+		await HttpContext.SignInAsync(principal);
+		navigationManager.NavigateTo("/");
+	}
+}
