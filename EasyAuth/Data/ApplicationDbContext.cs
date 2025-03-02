@@ -12,6 +12,7 @@ namespace EasyAuth.Data
 
         public DbSet<UserAccount> UserAccounts { get; set; }
         public DbSet<TokenModel> Tokens { get; set; }
+        public DbSet<RoleModel> Roles { get; set; }
     }
     
 }

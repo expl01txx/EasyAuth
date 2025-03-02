@@ -101,7 +101,6 @@
 	private async Task DeleteToken(int id)
 	{
 		var token = await appDbContext.Tokens.FindAsync(id);
-		Console.WriteLine(token);
 		if (token != null)
 		{
 			appDbContext.Tokens.Remove(token);

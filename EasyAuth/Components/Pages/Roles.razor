@@ -1,0 +1,82 @@
+@page "/roles"
+@rendermode InteractiveServer
+
+@using EasyAuth.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using Models.Entities;
+@using Microsoft.AspNetCore.Authentication;
+@inject ApplicationDbContext appDbContext;
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+@attribute [Authorize()]
+
+<PageTitle>Roles</PageTitle>
+
+<div class="row">
+	<div class="col-12">
+
+		<div class="card">
+			<div class="card-body flex-column">
+				<h5 class="card-title m-1">All roles</h5>
+				<hr />
+				<a href="/add-role" class="btn btn-primary m-1 p-1">Add new role</a>
+				<table class="table border m-1 p-1">
+					<thead>
+						<tr>
+							<th scope="col">#</th>
+							<th scope="col">Role</th>
+                            <th scope="col">Delete</th>
+						</tr>
+					</thead>
+					<tbody>
+                        @foreach (var role in roles)
+						{
+							var currentRole = role;
+							<tr>
+								<th scope="row">@currentRole.Id</th>
+								<td>@currentRole.Role</td>
+                                <td>
+									<button class="btn btn-danger" @onclick="() => DeleteRole(currentRole.Id)">Delete</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+@code{
+	private List<RoleModel> roles;
+
+	protected override async Task OnInitializedAsync()
+	{
+
+
+		var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authenticationState.User;
+
+		if (user is not null && user.Identity.IsAuthenticated)
+		{
+            // Get all roles from the database
+            roles = await appDbContext.Roles.ToListAsync();
+		}
+	}
+
+    private async Task DeleteRole(int id)
+	{
+		var role = await appDbContext.Roles.FindAsync(id);
+		if (role != null)
+		{
+			appDbContext.Roles.Remove(role);
+			await appDbContext.SaveChangesAsync();
+
+			// Refresh the token list
+			await OnInitializedAsync();
+			StateHasChanged();
+		}
+	}
+}

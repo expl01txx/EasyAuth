@@ -1,0 +1,58 @@
+@page "/add-role"
+@rendermode InteractiveServer
+
+@using EasyAuth.Models.ViewModels;
+@using EasyAuth.Data;
+@using Models.Entities;
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ApplicationDbContext appDbContext;
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+@inject NavigationManager navigationManager;
+@attribute [Authorize()]
+
+<div>
+    <EditForm Model="@Model" class="form" OnValidSubmit="AddRoleSubmit" FormName="AddRoleForm">
+        <DataAnnotationsValidator />
+        <h3 class="m-1">Add Role</h3>
+        <InputText @bind-Value="Model.Role" class="form-control m-1" placeholder="Role"></InputText>
+        <ValidationMessage For="() => Model.Role" />
+        <span>@errorMessage</span>
+        <button type="submit" class="btn btn-success m-1">Add Role</button>
+
+    </EditForm>
+</div>
+
+@code {
+    [CascadingParameter]
+    public HttpContext HttpContext { get; set; }
+
+    [SupplyParameterFromForm]
+    public RoleViewModel Model { get; set; } = new();
+
+    private string? errorMessage;
+
+    private async Task AddRoleSubmit() {
+        try
+        {
+            var roleEntity = new RoleModel
+                {
+                    Role = Model.Role
+                };
+
+            appDbContext.Roles.Add(roleEntity);
+            await appDbContext.SaveChangesAsync();
+
+            NavigateToTokens();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error adding token: {ex.Message}";
+            Console.WriteLine($"Error adding token: {ex}");
+        }
+    }
+    private void NavigateToTokens(){
+        navigationManager.NavigateTo("/roles");
+    }
+
+}

@@ -9,6 +9,7 @@
 @inject ApplicationDbContext appDbContext;
 @inject AuthenticationStateProvider AuthenticationStateProvider;
 @inject NavigationManager navigationManager;
+@attribute [Authorize()]
 
 
 <div>
@@ -64,8 +65,6 @@
             appDbContext.Tokens.Add(tokenEntity);
             await appDbContext.SaveChangesAsync();
 
-            Model = new TokenViewModel();
-            navigationManager.NavigateTo("/tokens");
             NavigateToTokens();
         }
         catch (Exception ex)

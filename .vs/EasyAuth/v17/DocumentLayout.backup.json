@@ -1,0 +1,71 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\sdd\\Documents\\GitHub\\EasyAuth\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{AAA7E26C-AE60-4B14-B1BF-C69AA8600564}|EasyAuth\\EasyAuth.csproj|c:\\users\\sdd\\documents\\github\\easyauth\\easyauth\\components\\pages\\tokens.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{AAA7E26C-AE60-4B14-B1BF-C69AA8600564}|EasyAuth\\EasyAuth.csproj|solutionrelative:easyauth\\components\\pages\\tokens.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AAA7E26C-AE60-4B14-B1BF-C69AA8600564}|EasyAuth\\EasyAuth.csproj|c:\\users\\sdd\\documents\\github\\easyauth\\easyauth\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{AAA7E26C-AE60-4B14-B1BF-C69AA8600564}|EasyAuth\\EasyAuth.csproj|solutionrelative:easyauth\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AAA7E26C-AE60-4B14-B1BF-C69AA8600564}|EasyAuth\\EasyAuth.csproj|c:\\users\\sdd\\documents\\github\\easyauth\\easyauth\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AAA7E26C-AE60-4B14-B1BF-C69AA8600564}|EasyAuth\\EasyAuth.csproj|solutionrelative:easyauth\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Home.razor",
+              "DocumentMoniker": "C:\\Users\\sdd\\Documents\\GitHub\\EasyAuth\\EasyAuth\\Components\\Pages\\Home.razor",
+              "RelativeDocumentMoniker": "EasyAuth\\Components\\Pages\\Home.razor",
+              "ToolTip": "C:\\Users\\sdd\\Documents\\GitHub\\EasyAuth\\EasyAuth\\Components\\Pages\\Home.razor",
+              "RelativeToolTip": "EasyAuth\\Components\\Pages\\Home.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-02-23T13:34:06.281Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Tokens.razor",
+              "DocumentMoniker": "C:\\Users\\sdd\\Documents\\GitHub\\EasyAuth\\EasyAuth\\Components\\Pages\\Tokens.razor",
+              "RelativeDocumentMoniker": "EasyAuth\\Components\\Pages\\Tokens.razor",
+              "ToolTip": "C:\\Users\\sdd\\Documents\\GitHub\\EasyAuth\\EasyAuth\\Components\\Pages\\Tokens.razor",
+              "RelativeToolTip": "EasyAuth\\Components\\Pages\\Tokens.razor",
+              "ViewState": "AgIAAFQAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-02-23T13:32:43.551Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\sdd\\Documents\\GitHub\\EasyAuth\\EasyAuth\\Program.cs",
+              "RelativeDocumentMoniker": "EasyAuth\\Program.cs",
+              "ToolTip": "C:\\Users\\sdd\\Documents\\GitHub\\EasyAuth\\EasyAuth\\Program.cs",
+              "RelativeToolTip": "EasyAuth\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAABXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-23T13:30:36.452Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
