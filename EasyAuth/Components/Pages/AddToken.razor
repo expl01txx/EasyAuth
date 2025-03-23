@@ -3,6 +3,7 @@
 
 @using EasyAuth.Models.ViewModels;
 @using EasyAuth.Data;
+@using Microsoft.EntityFrameworkCore
 @using Models.Entities;
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
@@ -11,19 +12,31 @@
 @inject NavigationManager navigationManager;
 @attribute [Authorize()]
 
-
 <div>
     <EditForm Model="@Model" class="form" OnValidSubmit="AddTokenSubmit" FormName="AddTokenForm">
         <DataAnnotationsValidator />
         <h3 class="m-1">Add Token</h3>
-        <InputText @bind-Value="Model.Token" class="form-control m-1"placeholder="Token"></InputText>
+
+        <!-- Token Input with Generate Button -->
+        <div class="input-group m-1">
+            <InputText @bind-Value="Model.Token" class="form-control" placeholder="Token"></InputText>
+            <button type="button" class="btn btn-secondary" @onclick="GenerateRandomToken">Generate Token</button>
+        </div>
         <ValidationMessage For="() => Model.Token" />
-        <InputText @bind-Value="Model.Role" class="form-control m-1" placeholder="Role"></InputText>
-        <ValidationMessage For="() => Model.Role" />
+
+        <!-- Role Dropdown -->
+        <select @bind="Model.RoleID" class="form-control m-1">
+            <option value="">-- Select Role --</option>
+            @foreach (var role in roles)
+            {
+                <option value="@role.Id">@role.Role</option>
+            }
+        </select>
+        <ValidationMessage For="() => Model.RoleID" />
+
         <InputDate @bind-Value="Model.Expires" class="form-control m-1"></InputDate>
         <span>@errorMessage</span>
         <button type="submit" class="btn btn-success m-1">Add Token</button>
-
     </EditForm>
 </div>
 
@@ -36,31 +49,73 @@
 
     private string? errorMessage;
 
-    private async Task AddTokenSubmit() {
+    // Roles fetched from the database
+    private List<RoleModel> roles = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
         try
         {
+            // Fetch roles from the database
+            roles = await appDbContext.Roles.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading roles: {ex.Message}";
+            Console.WriteLine($"Error loading roles: {ex}");
+        }
+    }
+
+    private void GenerateRandomToken()
+    {
+        // Generate a random UUID and assign it to the Token field
+        Model.Token = Guid.NewGuid().ToString();
+    }
+
+
+    private async Task AddTokenSubmit()
+    {
+        try
+        {
+            if (!Model.RoleID.HasValue)
+            {
+                errorMessage = "Please select a valid role.";
+                return;
+            }
+
+            // Verify if the selected role exists in the database
+            var selectedRole = roles.FirstOrDefault(r => r.Id == Model.RoleID.Value);
+            if (selectedRole == null)
+            {
+                errorMessage = "Invalid role selected.";
+                return;
+            }
+
             if (Model.Expires < DateTime.UtcNow)
             {
                 errorMessage = "Expiration date must be in the future";
                 return;
             }
+
             var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = authenticationState.User;
 
             if (user is null)
             {
                 errorMessage = "Failed to get Owner username";
+                return;
             }
 
             var tokenEntity = new TokenModel
-                {
-                    OwnerUsername = user.Identity.Name,
-                    Token = Model.Token,
-                    Role = Model.Role,
-                    Expires = Model.Expires,
-                    CreatedAt = DateTime.UtcNow,
-                    IsFreezed = false
-                };
+            {
+                OwnerUsername = user.Identity.Name,
+                Token = Model.Token,
+                Role = selectedRole.Role, // Use the role name from the selected role
+                Expires = Model.Expires,
+                CreatedAt = DateTime.UtcNow,
+                IsFreezed = false
+            };
 
             appDbContext.Tokens.Add(tokenEntity);
             await appDbContext.SaveChangesAsync();
@@ -73,8 +128,10 @@
             Console.WriteLine($"Error adding token: {ex}");
         }
     }
-    private void NavigateToTokens(){
+
+
+    private void NavigateToTokens()
+    {
         navigationManager.NavigateTo("/tokens");
     }
-
 }
