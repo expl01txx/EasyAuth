@@ -1,0 +1,265 @@
+@page "/files"
+@rendermode InteractiveServer
+@using System.IO
+@inject IWebHostEnvironment HostEnvironment
+
+<h3>File Explorer</h3>
+
+<div class="file-explorer-container">
+    <div class="breadcrumb">
+        <span class="breadcrumb-item" @onclick="() => NavigateToRoot()">Root</span>
+        @foreach (var part in currentPathParts)
+        {
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item" @onclick="() => NavigateTo(part.Link)">@part.Name</span>
+        }
+    </div>
+
+    <div class="file-upload-container">
+        <InputFile OnChange="OnInputFileChange" multiple />
+        <button class="btn btn-primary" @onclick="UploadFiles" disabled="@(selectedFiles.Count == 0)">Upload</button>
+        @if (selectedFiles.Count > 0)
+        {
+            <span>@selectedFiles.Count files selected</span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    <div class="file-table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Size</th>
+                    <th>Modified</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (currentPath != rootPath)
+                {
+                    <tr>
+                        <td colspan="5">
+                            <a href="#" @onclick="() => NavigateUp()">.. (Parent Directory)</a>
+                        </td>
+                    </tr>
+                }
+
+                @foreach (var dir in directories)
+                {
+                    <tr>
+                        <td>
+                            <a href="#" @onclick="() => NavigateTo(dir.FullName)">📁 @dir.Name</a>
+                        </td>
+                        <td>Directory</td>
+                        <td>-</td>
+                        <td>@dir.LastWriteTime.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteItem(dir.FullName, true)">Delete</button>
+                        </td>
+                    </tr>
+                }
+
+                @foreach (var file in files)
+                {
+                    <tr>
+                        <td>📄 @file.Name</td>
+                        <td>@file.Extension</td>
+                        <td>@FormatFileSize(file.Length)</td>
+                        <td>@file.LastWriteTime.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteItem(file.FullName, false)">Delete</button>
+                            <button class="btn btn-secondary btn-sm" @onclick="() => DownloadFile(file.FullName)">Download</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private string rootPath;
+    private string currentPath;
+    private List<DirectoryInfo> directories = new();
+    private List<FileInfo> files = new();
+    private List<IBrowserFile> selectedFiles = new();
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private List<BreadcrumbPart> currentPathParts = new();
+
+    protected override void OnInitialized()
+    {
+        rootPath = Path.Combine(HostEnvironment.WebRootPath, "uploads");
+        Directory.CreateDirectory(rootPath); // Ensure uploads directory exists
+        currentPath = rootPath;
+        LoadDirectoryContents();
+    }
+
+    private void LoadDirectoryContents()
+    {
+        try
+        {
+            errorMessage = string.Empty;
+            successMessage = string.Empty;
+
+            var dirInfo = new DirectoryInfo(currentPath);
+            directories = dirInfo.GetDirectories().ToList();
+            files = dirInfo.GetFiles().ToList();
+
+            UpdateBreadcrumb();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading directory contents: {ex.Message}";
+        }
+    }
+
+    private void UpdateBreadcrumb()
+    {
+        currentPathParts.Clear();
+        if (currentPath == rootPath) return;
+
+        var relativePath = currentPath.Substring(rootPath.Length).TrimStart(Path.DirectorySeparatorChar);
+        var parts = relativePath.Split(Path.DirectorySeparatorChar);
+
+        string accumulatedPath = rootPath;
+        foreach (var part in parts)
+        {
+            accumulatedPath = Path.Combine(accumulatedPath, part);
+            currentPathParts.Add(new BreadcrumbPart
+            {
+                Name = part,
+                Link = accumulatedPath
+            });
+        }
+    }
+
+    private void NavigateTo(string path)
+    {
+        currentPath = path;
+        LoadDirectoryContents();
+    }
+
+    private void NavigateUp()
+    {
+        var parent = Directory.GetParent(currentPath);
+        if (parent != null && parent.FullName.StartsWith(rootPath))
+        {
+            currentPath = parent.FullName;
+            LoadDirectoryContents();
+        }
+    }
+
+    private void NavigateToRoot()
+    {
+        currentPath = rootPath;
+        LoadDirectoryContents();
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        selectedFiles.Clear();
+        selectedFiles.AddRange(e.GetMultipleFiles());
+    }
+
+    private async Task UploadFiles()
+    {
+        if (selectedFiles.Count == 0) return;
+
+        try
+        {
+            errorMessage = string.Empty;
+            int uploadedCount = 0;
+
+            foreach (var file in selectedFiles)
+            {
+                var safeFileName = Path.GetFileName(file.Name);
+                var path = Path.Combine(currentPath, safeFileName);
+
+                await using var stream = new FileStream(path, FileMode.Create);
+                await file.OpenReadStream().CopyToAsync(stream);
+                uploadedCount++;
+            }
+
+            successMessage = $"Successfully uploaded {uploadedCount} file(s)";
+            selectedFiles.Clear();
+            LoadDirectoryContents();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error uploading files: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteItem(string path, bool isDirectory)
+    {
+        try
+        {
+            errorMessage = string.Empty;
+
+            if (isDirectory)
+            {
+                Directory.Delete(path, true);
+                successMessage = "Directory deleted successfully";
+            }
+            else
+            {
+                File.Delete(path);
+                successMessage = "File deleted successfully";
+            }
+
+            LoadDirectoryContents();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting item: {ex.Message}";
+        }
+    }
+
+    private async Task DownloadFile(string filePath)
+    {
+        try
+        {
+            var fileInfo = new FileInfo(filePath);
+            var relativePath = filePath.Substring(rootPath.Length).TrimStart(Path.DirectorySeparatorChar);
+            
+            // In a real application, you would implement a download endpoint
+            // This is just a placeholder to show the concept
+            errorMessage = "Download functionality would be implemented via a separate endpoint in a real application";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error preparing download: {ex.Message}";
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        int order = 0;
+        double len = bytes;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len /= 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private class BreadcrumbPart
+    {
+        public string Name { get; set; }
+        public string Link { get; set; }
+    }
+}
