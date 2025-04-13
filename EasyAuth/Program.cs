@@ -2,6 +2,8 @@ using EasyAuth.Components;
 using EasyAuth.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies ;
+using EasyAuth.Grpc;
+using EasyAuth.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +26,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddGrpc();
 
 var app = builder.Build();
 
@@ -44,6 +47,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+app.MapGrpcService<HyprSecService>();
 
 app.UseAntiforgery();
 app.Run();

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option csharp_namespace = "EasyAuth.Grpc";
+
+package main;
+
+service HyprSec {
+  rpc DownloadImage (HyprSec_AuthRequest) returns (HyprSec_ImageReply) {}
+}
+
+message HyprSec_AuthRequest {
+  string token = 1;
+}
+
+message HyprSec_ImageReply {
+  bool success = 1;
+  bytes image = 2;
+  bytes entry = 3;
+}
