@@ -10,6 +10,7 @@ service HyprSec {
 
 message HyprSec_AuthRequest {
   string token = 1;
+  string hwid = 2; // Добавлено поле HWID
 }
 
 message HyprSec_ImageReply {

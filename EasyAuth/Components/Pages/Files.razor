@@ -97,6 +97,8 @@
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
     private List<BreadcrumbPart> currentPathParts = new();
+    private const long MaxFileSize = 100 * 1024 * 1024; // 100 MB
+
 
     protected override void OnInitialized()
     {
@@ -188,7 +190,7 @@
                 var path = Path.Combine(currentPath, safeFileName);
 
                 await using var stream = new FileStream(path, FileMode.Create);
-                await file.OpenReadStream().CopyToAsync(stream);
+                await file.OpenReadStream(MaxFileSize).CopyToAsync(stream);
                 uploadedCount++;
             }
 

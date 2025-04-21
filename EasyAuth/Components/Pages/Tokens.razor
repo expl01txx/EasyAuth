@@ -4,112 +4,139 @@
 @using EasyAuth.Data
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
-@using Models.Entities;
-@using Microsoft.AspNetCore.Authentication;
-@inject ApplicationDbContext appDbContext;
-@inject AuthenticationStateProvider AuthenticationStateProvider;
+@using EasyAuth.Models.Entities
+@using Microsoft.AspNetCore.Authentication
+@inject ApplicationDbContext appDbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @attribute [Authorize()]
 
 <PageTitle>Tokens</PageTitle>
 
 <div class="row">
-	<div class="col-12">
-
-		<div class="card">
-			<div class="card-body flex-column">
-				<h5 class="card-title m-1">All tokens</h5>
-				<hr />
-				<a href="/add-token" class="btn btn-primary m-1 p-1">Add new token</a>
-				<table class="table border m-1 p-1">
-					<thead>
-						<tr>
-							<th scope="col">#</th>
-							<th scope="col">Token</th>
-							<th scope="col">Role</th>
-							<th scope="col">Expires</th>
-							<th scope="col">Created</th>
-							<th scope="col">Freeze</th>
-							<th scope="col">Delete</th>
-						</tr>
-					</thead>
-					<tbody>
-                            @foreach (var token in tokens)
-						{
-							var currentToken = token;
-							<tr>
-								<th scope="row">@token.Id</th>
-								<td>@currentToken.Token</td>
-								<td>@currentToken.Role</td>
-								<td>@currentToken.Expires.ToString("dd.MM.yyyy")</td>
-								<td>@currentToken.CreatedAt.ToString("dd.MM.yyyy")</td>
-								<td>
-									@if(token.IsFreezed){
-										<button class="btn btn-warning" @onclick="() => ToggleFreeze(currentToken.Id)">Unfreeze</button>
-									}else{
-										<button class="btn btn-warning" @onclick="() => ToggleFreeze(currentToken.Id)">Freeze</button>
-									}
-								</td>
-								<td>
-									<button class="btn btn-danger" @onclick="() => DeleteToken(currentToken.Id)">Delete</button>
-								</td>
-							</tr>
-						}
-					</tbody>
-				</table>
-			</div>
-		</div>
-	</div>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body flex-column">
+                <h5 class="card-title m-1">All tokens</h5>
+                <hr />
+                <a href="/add-token" class="btn btn-primary m-1 p-1">Add new token</a>
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="alert alert-success alert-dismissible fade show m-1" role="alert">
+                        @successMessage
+                        <button type="button" class="btn-close" @onclick="ClearSuccessMessage"></button>
+                    </div>
+                }
+                <table class="table border m-1 p-1">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Token</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Expires</th>
+                            <th scope="col">Created</th>
+                            <th scope="col">Freeze</th>
+                            <th scope="col">Reset HWID</th>
+                            <th scope="col">Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var token in tokens)
+                        {
+                            var currentToken = token;
+                            <tr>
+                                <th scope="row">@token.Id</th>
+                                <td>@currentToken.Token</td>
+                                <td>@currentToken.Role</td>
+                                <td>@currentToken.Expires.ToString("dd.MM.yyyy")</td>
+                                <td>@currentToken.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                <td>
+                                    @if (token.IsFreezed)
+                                    {
+                                        <button class="btn btn-warning" @onclick="() => ToggleFreeze(currentToken.Id)">Unfreeze</button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-warning" @onclick="() => ToggleFreeze(currentToken.Id)">Freeze</button>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-secondary" @onclick="() => ResetHwid(currentToken.Id)">Reset HWID</button>
+                                </td>
+                                <td>
+                                    <button class="btn btn-danger" @onclick="() => DeleteToken(currentToken.Id)">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
-@code{
-	private List<TokenModel> tokens;
+@code {
+    private List<TokenModel> tokens = new();
+    private string? successMessage;
 
-	protected override async Task OnInitializedAsync()
-	{
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
 
+        if (user != null && user.Identity?.IsAuthenticated == true)
+        {
+            var username = user.Identity.Name;
+            tokens = appDbContext.Tokens
+                .Where(t => t.OwnerUsername == username)
+                .ToList();
+        }
+    }
 
-		var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-		var user = authenticationState.User;
+    private async Task ToggleFreeze(int id)
+    {
+        var token = await appDbContext.Tokens.FindAsync(id);
+        if (token != null)
+        {
+            token.IsFreezed = !token.IsFreezed;
+            await appDbContext.SaveChangesAsync();
+            await OnInitializedAsync();
+            StateHasChanged();
+        }
+    }
 
-		if (user is not null && user.Identity.IsAuthenticated)
-		{
-			// Use the username from the authentication context to filter tokens
-			var username = user.Identity.Name;
-			tokens = appDbContext.Tokens
-				.Where(t => t.OwnerUsername == username)
-				.ToList();
-		}
-	}
+    private async Task ResetHwid(int id)
+    {
+        var token = await appDbContext.Tokens.FindAsync(id);
+        if (token != null)
+        {
+            token.Hwid = null; // Сбрасываем HWID
+            await appDbContext.SaveChangesAsync();
+            successMessage = "HWID successfully reset!";
+            await OnInitializedAsync();
+            StateHasChanged();
 
-	private async Task ToggleFreeze(int id)
-	{
-		var token = await appDbContext.Tokens.FindAsync(id);
-		if (token != null)
-		{
-			// Assume you have a property 'IsFrozen' on your token
-			token.IsFreezed = !token.IsFreezed;
-			await appDbContext.SaveChangesAsync();
+            // Автоматически скрываем уведомление через 3 секунды
+            await Task.Delay(3000);
+            successMessage = null;
+            StateHasChanged();
+        }
+    }
 
-			// Refresh the token list
-			await OnInitializedAsync();
-			StateHasChanged();
-		}
-	}
+    private async Task DeleteToken(int id)
+    {
+        var token = await appDbContext.Tokens.FindAsync(id);
+        if (token != null)
+        {
+            appDbContext.Tokens.Remove(token);
+            await appDbContext.SaveChangesAsync();
+            await OnInitializedAsync();
+            StateHasChanged();
+        }
+    }
 
-
-	// Example method to delete a token.
-	private async Task DeleteToken(int id)
-	{
-		var token = await appDbContext.Tokens.FindAsync(id);
-		if (token != null)
-		{
-			appDbContext.Tokens.Remove(token);
-			await appDbContext.SaveChangesAsync();
-
-			// Refresh the token list
-			await OnInitializedAsync();
-			StateHasChanged();
-		}
-	}
-
+    private void ClearSuccessMessage()
+    {
+        successMessage = null;
+        StateHasChanged();
+    }
 }

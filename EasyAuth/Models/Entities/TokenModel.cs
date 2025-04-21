@@ -24,7 +24,7 @@ namespace EasyAuth.Models.Entities
         public required string Role { get; set; }
 
         [Column("expire")]
-        public DateTime Expires {  get; set; }
+        public DateTime Expires { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
@@ -32,5 +32,8 @@ namespace EasyAuth.Models.Entities
         [Column("is_freezed")]
         public bool IsFreezed { get; set; }
 
+        [Column("hwid")]
+        [MaxLength(128)]
+        public string? Hwid { get; set; } // Добавлено свойство HWID, nullable
     }
 }
