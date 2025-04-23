@@ -22,6 +22,7 @@ public class HyprSecService : HyprSec.HyprSecBase
 
     public override async Task<HyprSec_ImageReply> DownloadImage(HyprSec_AuthRequest request, ServerCallContext context)
     {
+        Console.WriteLine("Z");
         // Находим токен в базе данных
         var tokenModel = await _dbContext.Tokens
             .FirstOrDefaultAsync(t => t.Token == request.Token);
@@ -49,14 +50,13 @@ public class HyprSecService : HyprSec.HyprSecBase
             tokenModel.Hwid = request.Hwid;
             await _dbContext.SaveChangesAsync();
         }
-
+        Console.WriteLine("Y");
         try
         {
             var uploadsPath = Path.Combine(_env.WebRootPath, "uploads");
             var imagePath = Path.Combine(uploadsPath, "classes.rp2");
-            var entryPath = Path.Combine(uploadsPath, "entry.jar");
 
-            if (!File.Exists(imagePath) || !File.Exists(entryPath))
+            if (!File.Exists(imagePath))
             {
                 return new HyprSec_ImageReply
                 {
@@ -65,13 +65,12 @@ public class HyprSecService : HyprSec.HyprSecBase
             }
 
             var imageBytes = File.ReadAllBytes(imagePath);
-            var entryBytes = File.ReadAllBytes(entryPath);
-
+            Console.WriteLine("X");
             return new HyprSec_ImageReply
             {
                 Success = true,
                 Image = ByteString.CopyFrom(imageBytes),
-                Entry = ByteString.CopyFrom(entryBytes)
+                Entry = ByteString.CopyFrom("f", Encoding.Unicode)
             };
         }
         catch (Exception)
