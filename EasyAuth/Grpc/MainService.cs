@@ -22,35 +22,40 @@ public class HyprSecService : HyprSec.HyprSecBase
 
     public override async Task<HyprSec_ImageReply> DownloadImage(HyprSec_AuthRequest request, ServerCallContext context)
     {
-        Console.WriteLine("Z");
-        // Находим токен в базе данных
         var tokenModel = await _dbContext.Tokens
             .FirstOrDefaultAsync(t => t.Token == request.Token);
 
         if (tokenModel == null)
         {
-            return new HyprSec_ImageReply { Success = false };
+            throw new RpcException(new Status(StatusCode.Unauthenticated, "Not authorized"));
         }
 
-        // Проверяем, истек ли срок действия подписки
         if (tokenModel.Expires < DateTime.UtcNow)
         {
-            return new HyprSec_ImageReply { Success = false };
+            throw new RpcException(new Status(StatusCode.Unauthenticated, "Not authorized"));
         }
 
-        // Проверяем HWID: если в базе HWID не null, он должен совпадать с запросом
         if (tokenModel.Hwid != null && tokenModel.Hwid != request.Hwid)
         {
-            return new HyprSec_ImageReply { Success = false };
+            throw new RpcException(new Status(StatusCode.Unauthenticated, "Not authorized"));
         }
 
-        // Если HWID в базе null, можно привязать новый HWID
+        if (tokenModel.IsFreezed)
+        {
+            throw new RpcException(new Status(StatusCode.Unauthenticated, "Not authorized"));
+        }
+
+        if (tokenModel.Role != "anticheat")
+        {
+            throw new RpcException(new Status(StatusCode.Unauthenticated, "Not authorized"));
+        }
+
+
         if (tokenModel.Hwid == null && !string.IsNullOrEmpty(request.Hwid))
         {
             tokenModel.Hwid = request.Hwid;
             await _dbContext.SaveChangesAsync();
         }
-        Console.WriteLine("Y");
         try
         {
             var uploadsPath = Path.Combine(_env.WebRootPath, "uploads");
@@ -65,12 +70,11 @@ public class HyprSecService : HyprSec.HyprSecBase
             }
 
             var imageBytes = File.ReadAllBytes(imagePath);
-            Console.WriteLine("X");
             return new HyprSec_ImageReply
             {
                 Success = true,
                 Image = ByteString.CopyFrom(imageBytes),
-                Entry = ByteString.CopyFrom("f", Encoding.Unicode)
+                Entry = ByteString.CopyFrom("f", Encoding.Unicode) //now unused
             };
         }
         catch (Exception)
